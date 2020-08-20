@@ -7,8 +7,12 @@ Username = ""
 Password = ""
 NTLM = ""
 UniqueUserName = False
-EndOfRecord = False
-UserNames = []
+UserNamesWritten = []
+HashWrittenFor = []
+PasswordWrittenFor = []
+Record = []
+RecordList = []
+output = ""
 if args.output:
     output = open(args.output,"w")
 with open(args.input,'r') as file:
@@ -20,31 +24,59 @@ with open(args.input,'r') as file:
                if user == "(null)":
                    continue
                Username = user.strip().upper()
-               if Username not in UserNames:
-                print("====="+Username+"=====")
-                UserNames.append(Username)
-                if output:
-                    output.write("====="+Username+"=====" + "\n")
+               if Username not in UserNamesWritten:
+                UserNamesWritten.append(Username)
+                Record.append("UserName:"+Username)
                 UniqueUserName = True
-            if "NTLM" in line and UniqueUserName:
+               else:
+                   UniqueUserName = False
+
+            if "NTLM" in line:
                         data = line.split(" :")
                         hash = data[1].strip()
                         NTLM = hash
-                        print("NTLM: " + NTLM)
-                        if output:
-                            output.write("NTLM: " + NTLM + "\n")
+                        if Username not in HashWrittenFor:
+                            Record.append("NTLM:"+NTLM)
+                            HashWrittenFor.append(Username)
+
             if "Password" in line:
                         data = line.split(" :")
                         Password = data[1].strip()
                         if ("(null)" in Password)or (len(Password)> 50) :
-                            UniqueUserName = False
-                        else:
-                            print("Password: " + Password)
-                            if output:
-                                output.write("Password: " + Password +"\n")
-                        UniqueUserName = False
+                            if Record:
+                                RecordList.append(Record)
+                                Record = []
+                            continue
+                        if Username not in PasswordWrittenFor:
+                            if UniqueUserName:
+                                Record.append("Password:"+Password)
+                                RecordList.append(Record)
+                            else:
+                                for Record in RecordList:
+                                    if Username in Record:
+                                        Record.append("Password:"+Password)
+                            PasswordWrittenFor.append(Username)
+                            Record = []
+                                
     except Exception as e:
         print(e)
 file.close()
+for Record in RecordList:
+    for item in Record:
+        if "UserName" in item:
+            print("=========="+item+"==========")
+            if output:
+                output.write("=========="+item+"==========" + "\n")
+        elif "NTLM" in item:
+            print(item)
+            if output:
+                output.write(item+"\n")
+        elif "Password" in item:
+            print(item)
+            if output:
+                output.write(item+"\n")
+    print("\n")
+    if output:
+        output.write("\n")
 if output:
     output.close()
