@@ -24,7 +24,7 @@ with open(args.input,'r') as file:
                if user == "(null)":
                    continue
                Username = user.strip().upper()
-               if Username not in UserNamesWritten:
+               if "UserName:"+Username in Record:
                 UserNamesWritten.append(Username)
                 Record.append("UserName:"+Username)
                 UniqueUserName = True
